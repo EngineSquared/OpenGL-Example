@@ -29,6 +29,7 @@ void TESTAddQuad(ES::Engine::Core &core)
     model.shaderName = "default";
     model.materialName = "default";
     model.meshName = "default";
+    model.modelName = "default";
 
     ES::Plugin::Object::Component::Mesh mesh;
 
@@ -121,6 +122,7 @@ void TESTAddTorus(ES::Engine::Core &core)
     model.shaderName = "default";
     model.materialName = "TESTTorus";
     model.meshName = "TESTTorus";
+    model.modelName = "TESTTorus";
 
     ES::Plugin::Object::Component::Mesh mesh;
 
