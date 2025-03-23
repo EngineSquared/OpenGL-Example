@@ -141,8 +141,6 @@ int main()
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddQuad);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus);
 
-    core.RegisterSystem<ES::Engine::Scheduler::Startup>(ES::Plugin::OpenGL::System::LoadGLBuffer);
-
     core.RunCore();
 
     glfwDestroyWindow(core.GetResource<ES::Plugin::Window::Resource::Window>().GetGLFWWindow());
