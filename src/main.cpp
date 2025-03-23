@@ -17,19 +17,13 @@
 #include "OpenGL.hpp"
 #include "Startup.hpp"
 #include "Window.hpp"
+#include "Mesh.hpp"
 
 void TESTAddQuad(ES::Engine::Core &core)
 {
     using namespace glm;
 
     auto quad = ES::Engine::Entity(core.GetRegistry().create());
-
-    ES::Plugin::OpenGL::Component::Model model;
-
-    model.shaderName = "default";
-    model.materialName = "default";
-    model.meshName = "default";
-    model.modelName = "default";
 
     ES::Plugin::Object::Component::Mesh mesh;
 
@@ -50,12 +44,15 @@ void TESTAddQuad(ES::Engine::Core &core)
     mesh.indices = {2, 0, 1, 2, 1, 3};
 
     quad.AddComponent<ES::Plugin::Object::Component::Mesh>(core, mesh);
-    quad.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, model);
     auto &transform = quad.AddComponent<ES::Plugin::Object::Component::Transform>(core, {});
 
     transform.position = glm::vec3(0.0f, -1.0f, 0.0f);
     transform.rotation = glm::angleAxis(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
     transform.scale = glm::vec3(10.0f, 10.0f, 10.0f);
+
+    quad.AddComponent<ES::Plugin::OpenGL::Component::Shader>(core, ES::Plugin::OpenGL::Component::Shader("default"));
+    quad.AddComponent<ES::Plugin::OpenGL::Component::Material>(core, ES::Plugin::OpenGL::Component::Material("default"));
+    quad.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, ES::Plugin::OpenGL::Component::Model("floor"));
 }
 
 void TESTGenerateData(ES::Plugin::Object::Component::Mesh &mesh, float outerRadius, float innerRadius)
@@ -111,27 +108,48 @@ void TESTAddTorus(ES::Engine::Core &core)
     using namespace glm;
 
     auto torus = ES::Engine::Entity(core.GetRegistry().create());
-    auto &mat = core.GetResource<ES::Plugin::OpenGL::Resource::MaterialCache>().Add(entt::hashed_string("TESTTorus"), std::move(ES::Plugin::OpenGL::Utils::Material()));
+    auto &mat = core.GetResource<ES::Plugin::OpenGL::Resource::MaterialCache>().Add(entt::hashed_string("TESTTorus"), std::move(ES::Plugin::OpenGL::Utils::MaterialData()));
     mat.Shiness = 180.0f;
     mat.Ka = vec3(0.1, 0.1, 0.1);
     mat.Kd = vec3(0.4, 0.4, 0.4);
     mat.Ks = vec3(0.9,0.9, 0.9);
-
-    ES::Plugin::OpenGL::Component::Model model;
-
-    model.shaderName = "default";
-    model.materialName = "TESTTorus";
-    model.meshName = "TESTTorus";
-    model.modelName = "TESTTorus";
 
     ES::Plugin::Object::Component::Mesh mesh;
 
     TESTGenerateData(mesh, 1.5f, 0.3f);
 
     torus.AddComponent<ES::Plugin::Object::Component::Mesh>(core, mesh);
-    torus.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, model);
     auto &transform = torus.AddComponent<ES::Plugin::Object::Component::Transform>(core, {});
     transform.rotation = glm::angleAxis(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
+
+    torus.AddComponent<ES::Plugin::OpenGL::Component::Shader>(core, ES::Plugin::OpenGL::Component::Shader("default"));
+    torus.AddComponent<ES::Plugin::OpenGL::Component::Material>(core, ES::Plugin::OpenGL::Component::Material("TESTTorus"));
+    torus.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, ES::Plugin::OpenGL::Component::Model("torus"));
+}
+
+// Second torus to test that we can add an object with the same mesh but a different material
+void TESTAddTorus2(ES::Engine::Core &core)
+{
+    using namespace glm;
+
+    auto torus = ES::Engine::Entity(core.GetRegistry().create());
+    auto &mat = core.GetResource<ES::Plugin::OpenGL::Resource::MaterialCache>().Add(entt::hashed_string("TESTTorus2"), std::move(ES::Plugin::OpenGL::Utils::MaterialData()));
+    mat.Shiness = 180.0f;
+    mat.Ka = vec3(0.1, 0.0, 0.0);
+    mat.Kd = vec3(0.4, 0.0, 0.0);
+    mat.Ks = vec3(0.9, 0.0, 0.0);
+
+    ES::Plugin::Object::Component::Mesh mesh;
+
+    TESTGenerateData(mesh, 1.5f, 0.3f);
+
+    torus.AddComponent<ES::Plugin::Object::Component::Mesh>(core, mesh);
+    auto &transform = torus.AddComponent<ES::Plugin::Object::Component::Transform>(core, {});
+    transform.rotation = glm::angleAxis(glm::radians(0.f), glm::vec3(1.f, 0.f, 0.f));
+
+    torus.AddComponent<ES::Plugin::OpenGL::Component::Shader>(core, ES::Plugin::OpenGL::Component::Shader("default"));
+    torus.AddComponent<ES::Plugin::OpenGL::Component::Material>(core, ES::Plugin::OpenGL::Component::Material("TESTTorus2"));
+    torus.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, ES::Plugin::OpenGL::Component::Model("torus2"));
 }
 
 int main()
@@ -142,6 +160,7 @@ int main()
 
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddQuad);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus);
+    core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus2);
 
     core.RunCore();
 
