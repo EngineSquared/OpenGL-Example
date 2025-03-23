@@ -1,8 +1,10 @@
 /**
  * Project attended to report some issues from E²(https://github.com/EngineSquared/EngineSquared)
- * 
+ *
  * Issues:
- * - Can't report any errors from systems (like OpenGL errors). For example, initialization systems (like systems that use glfw functions that can return errors like "glfwInit") should raise an error if an error occured.
+ * - Can't report any errors from systems (like OpenGL errors). For example,
+ * initialization systems (like systems that use glfw functions that can return
+ * errors like "glfwInit") should raise an error if an error occured.
  * - We don't really know what we can do with Core.
  * - No clear way to run something when closing the program (like cleaning up resources, glfw context).
  * - We can't use Plugin::AssetsManager with string as key.
@@ -26,90 +28,84 @@ void TESTAddQuad(ES::Engine::Core &core)
 
     model.shaderName = "default";
     model.materialName = "default";
+    model.meshName = "default";
+    model.modelName = "default";
 
-    ES::Plugin::OpenGL::Utils::Mesh mesh;
+    ES::Plugin::Object::Component::Mesh mesh;
 
-    std::vector<vec3> vertices;
-    std::vector<vec3> normals;
-    std::vector<vec<3, unsigned int>> triIndices;
-
-    vertices = {
-        vec3(-1,  1, 0),
-        vec3( 1,  1, 0),
-        vec3(-1, -1, 0),
-        vec3( 1, -1, 0)
+    mesh.vertices = {
+        glm::vec3(-1, 1, 0),
+        glm::vec3(1, 1, 0),
+        glm::vec3(-1, -1, 0),
+        glm::vec3(1, -1, 0)
     };
 
-    normals = {
-        vec3(0, 0, -1),
-        vec3(0, 0, -1),
-        vec3(0, 0, -1),
-        vec3(0, 0, -1)
+    mesh.normals = {
+        glm::vec3(0, 0, -1),
+        glm::vec3(0, 0, -1),
+        glm::vec3(0, 0, -1),
+        glm::vec3(0, 0, -1)
     };
 
-    triIndices = {
-        {2, 0, 1},
-        {2, 1, 3}
-    };
+    mesh.indices = {2, 0, 1, 2, 1, 3};
 
-    mesh.vertices = vertices;
-    mesh.normals = normals;
-    mesh.triIndices = triIndices;
-    mesh.generateGlBuffers();
-
-    model.mesh = mesh;
-
-
+    quad.AddComponent<ES::Plugin::Object::Component::Mesh>(core, mesh);
     quad.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, model);
     auto &transform = quad.AddComponent<ES::Plugin::Object::Component::Transform>(core, {});
-    
+
     transform.position = glm::vec3(0.0f, -1.0f, 0.0f);
     transform.rotation = glm::angleAxis(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
     transform.scale = glm::vec3(10.0f, 10.0f, 10.0f);
 }
 
-void TESTGenerateData(ES::Plugin::OpenGL::Utils::Mesh &mesh, float outerRadius, float innerRadius)
+void TESTGenerateData(ES::Plugin::Object::Component::Mesh &mesh, float outerRadius, float innerRadius)
 {
     using namespace glm;
+
+    mesh.vertices.reserve(100 * 100);
+    mesh.normals.reserve(100 * 100);
+    mesh.indices.reserve(100 * 100 * 6);
 
     float TWOPI = 2 * glm::pi<float>();
 
     float ringFactor  = (float)(TWOPI / 100);
     float sideFactor = (float)(TWOPI / 100);
-    int idx = 0, tidx = 0;
-    for( int ring = 0; ring <= 100; ring++ ) {
+    for (uint32_t ring = 0; ring <= 100; ring++)
+    {
         float u = ring * ringFactor;
         float cu = cos(u);
         float su = sin(u);
-        for( int side = 0; side < 100; side++ ) {
+
+        for (uint32_t side = 0; side < 100; side++)
+        {
             float v = side * sideFactor;
             float cv = cos(v);
             float sv = sin(v);
             float r = (outerRadius + innerRadius * cv);
-            mesh.vertices.push_back(vec3(r * cu, r * su, innerRadius * sv));
-            mesh.normals.push_back(vec3(cv * cu * r, cv * su * r, sv * r));
             // Normalize
-            float len = sqrt( mesh.normals[idx].x * mesh.normals[idx].x +
-                            mesh.normals[idx].y * mesh.normals[idx].y +
-                            mesh.normals[idx].z * mesh.normals[idx].z );
-            mesh.normals[idx] /= len;
-            idx += 1;
+            glm::vec3 normal = glm::vec3(cv * cu * r, cv * su * r, sv * r);
+            float len = sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
+            normal /= len;
+            mesh.vertices.emplace_back(glm::vec3(r * cu, r * su, innerRadius * sv));
+            mesh.normals.emplace_back(normal);
         }
     }
 
-    idx = 0;
-    for( int ring = 0; ring < 100; ring++ ) {
-        int ringStart = ring * 100;
-        int nextRingStart = (ring + 1) * 100;
-        for( int side = 0; side < 100; side++ ) {
-            int nextSide = (side+1) % 100;
+    for (uint32_t ring = 0; ring < 100; ring++)
+    {
+        uint32_t ringStart = ring * 100;
+        uint32_t nextRingStart = (ring + 1) * 100;
+
+        for (uint32_t side = 0; side < 100; side++)
+        {
+            uint32_t nextSide = (side+1) % 100;
             // The quad
-            mesh.triIndices.push_back({ringStart + side, nextRingStart + side, nextRingStart + nextSide});
-            mesh.triIndices.push_back({ringStart + side, nextRingStart + nextSide, ringStart + nextSide});
+            mesh.indices.insert(mesh.indices.end(), {ringStart + side, nextRingStart + side, nextRingStart + nextSide});
+            mesh.indices.insert(mesh.indices.end(), {ringStart + side, nextRingStart + nextSide, ringStart + nextSide});
         }
     }
 }
-    
+
 void TESTAddTorus(ES::Engine::Core &core)
 {
     using namespace glm;
@@ -120,21 +116,19 @@ void TESTAddTorus(ES::Engine::Core &core)
     mat.Ka = vec3(0.1, 0.1, 0.1);
     mat.Kd = vec3(0.4, 0.4, 0.4);
     mat.Ks = vec3(0.9,0.9, 0.9);
-    
 
     ES::Plugin::OpenGL::Component::Model model;
 
     model.shaderName = "default";
     model.materialName = "TESTTorus";
+    model.meshName = "TESTTorus";
+    model.modelName = "TESTTorus";
 
-    ES::Plugin::OpenGL::Utils::Mesh mesh;
+    ES::Plugin::Object::Component::Mesh mesh;
 
     TESTGenerateData(mesh, 1.5f, 0.3f);
-    mesh.generateGlBuffers();
 
-    model.mesh = mesh;
-
-
+    torus.AddComponent<ES::Plugin::Object::Component::Mesh>(core, mesh);
     torus.AddComponent<ES::Plugin::OpenGL::Component::Model>(core, model);
     auto &transform = torus.AddComponent<ES::Plugin::Object::Component::Transform>(core, {});
     transform.rotation = glm::angleAxis(glm::radians(90.f), glm::vec3(1.f, 0.f, 0.f));
