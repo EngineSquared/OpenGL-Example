@@ -152,6 +152,41 @@ void TESTAddTorus2(ES::Engine::Core &core)
     torus.AddComponent<ES::Plugin::OpenGL::Component::ModelHandle>(core, ES::Plugin::OpenGL::Component::ModelHandle("torus2"));
 }
 
+void TESTAdd2D(ES::Engine::Core &core)
+{
+    using namespace glm;
+
+    auto quad = ES::Engine::Entity(core.GetRegistry().create());
+
+    ES::Plugin::Object::Component::Mesh mesh;
+
+    // Using vertices with a screen center ref
+    mesh.vertices = {
+        glm::vec3(0.5f, 0.5f, 0.0f),
+        glm::vec3(0.5f, -0.5f, 0.0f),
+        glm::vec3(-0.5f, -0.5f, 0.0f),
+        glm::vec3(-0.5f, 0.5f, 0.0f),
+    };
+
+    // Using current normals as vertex colors
+    mesh.normals = {
+        glm::vec3(1, 0, 0),
+        glm::vec3(0, 1, 0),
+        glm::vec3(0, 0, 1),
+        glm::vec3(1, 1, 1),
+    };
+
+    // Using counter clockwise order 
+    mesh.indices = {3, 1, 0, 3, 2, 1};
+
+    quad.AddComponent<ES::Plugin::Object::Component::Mesh>(core, mesh);
+    auto &transform = quad.AddComponent<ES::Plugin::Object::Component::Transform>(core, ES::Plugin::Object::Component::Transform());
+
+    quad.AddComponent<ES::Plugin::OpenGL::Component::ShaderHandle>(core, ES::Plugin::OpenGL::Component::ShaderHandle("2D"));
+    quad.AddComponent<ES::Plugin::OpenGL::Component::MaterialHandle>(core, ES::Plugin::OpenGL::Component::MaterialHandle("default"));
+    quad.AddComponent<ES::Plugin::OpenGL::Component::ModelHandle>(core, ES::Plugin::OpenGL::Component::ModelHandle("floor2"));
+}
+
 int main()
 {
     ES::Engine::Core core;
@@ -161,6 +196,14 @@ int main()
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddQuad);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus2);
+    core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAdd2D);
+
+    core.RegisterSystem<ES::Engine::Scheduler::Startup>([](ES::Engine::Core &core) {
+        auto &shader2D = core.GetResource<ES::Plugin::OpenGL::Resource::ShaderManager>().Add(entt::hashed_string("2D"), ES::Plugin::OpenGL::Utils::ShaderProgram());
+        shader2D.Create();
+        shader2D.initFromFiles("shaders/2D.vert", "shaders/2D.frag");
+    });
+
 
     core.RunCore();
 
