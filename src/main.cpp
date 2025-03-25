@@ -18,6 +18,7 @@
 #include "Startup.hpp"
 #include "Window.hpp"
 #include "Mesh.hpp"
+#include "UI.hpp"
 
 void TESTAddQuad(ES::Engine::Core &core)
 {
@@ -152,6 +153,30 @@ void TESTAddTorus2(ES::Engine::Core &core)
     torus.AddComponent<ES::Plugin::OpenGL::Component::ModelHandle>(core, ES::Plugin::OpenGL::Component::ModelHandle("torus2"));
 }
 
+void TESTAddText(ES::Engine::Core &core)
+{
+    auto &font = core.GetResource<ES::Plugin::OpenGL::Resource::FontManager>().Add(
+        entt::hashed_string("tomorrow"),
+        ES::Plugin::OpenGL::Utils::Font("./assets/Tomorrow-Medium.ttf", 32)
+    );
+
+    auto text1 = ES::Engine::Entity(core.GetRegistry().create());
+
+    text1.AddComponent<ES::Plugin::UI::Component::Text>(core, ES::Plugin::UI::Component::Text("The quick, brown fox jumped over the lazy dog", glm::vec2(50.0f, 100.0f), 1.0f, glm::vec3(1.0f, 1.0f, 1.0f)));
+
+    text1.AddComponent<ES::Plugin::OpenGL::Component::FontHandle>(core, ES::Plugin::OpenGL::Component::FontHandle("tomorrow"));
+    text1.AddComponent<ES::Plugin::OpenGL::Component::ShaderHandle>(core, ES::Plugin::OpenGL::Component::ShaderHandle("textDefault"));
+
+    auto text2 = ES::Engine::Entity(core.GetRegistry().create());
+
+    // Test some symbols and scaling
+    // Warning: text looks blocky when scaling up, which is why here we scale down
+    text2.AddComponent<ES::Plugin::UI::Component::Text>(core, ES::Plugin::UI::Component::Text("Some symbols &~!%*^,;\\_", glm::vec2(50.0f, 69.0f), 0.667f, glm::vec3(1.0f, 1.0f, 1.0f)));
+
+    text2.AddComponent<ES::Plugin::OpenGL::Component::FontHandle>(core, ES::Plugin::OpenGL::Component::FontHandle("tomorrow"));
+    text2.AddComponent<ES::Plugin::OpenGL::Component::ShaderHandle>(core, ES::Plugin::OpenGL::Component::ShaderHandle("textDefault"));
+}
+
 int main()
 {
     ES::Engine::Core core;
@@ -161,6 +186,7 @@ int main()
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddQuad);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus2);
+    core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddText);
 
     core.RunCore();
 
