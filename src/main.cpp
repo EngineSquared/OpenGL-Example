@@ -177,6 +177,29 @@ void TESTAddText(ES::Engine::Core &core)
     text2.AddComponent<ES::Plugin::OpenGL::Component::FontHandle>(core, ES::Plugin::OpenGL::Component::FontHandle("tomorrow"));
     text2.AddComponent<ES::Plugin::OpenGL::Component::ShaderHandle>(core, ES::Plugin::OpenGL::Component::ShaderHandle("textDefault"));
     text2.AddComponent<ES::Plugin::OpenGL::Component::TextHandle>(core, ES::Plugin::OpenGL::Component::TextHandle("text2"));
+
+    auto timeElapsedText = ES::Engine::Entity(core.GetRegistry().create());
+
+    timeElapsedText.AddComponent<ES::Plugin::UI::Component::Text>(core, ES::Plugin::UI::Component::Text("Time elapsed: 0.0s", glm::vec2(50.0f, 680.0f), 1.0f, glm::vec3(1.0f, 1.0f, 1.0f)));
+    timeElapsedText.AddComponent<ES::Plugin::OpenGL::Component::FontHandle>(core, ES::Plugin::OpenGL::Component::FontHandle("tomorrow"));
+    timeElapsedText.AddComponent<ES::Plugin::OpenGL::Component::ShaderHandle>(core, ES::Plugin::OpenGL::Component::ShaderHandle("textDefault"));
+    timeElapsedText.AddComponent<ES::Plugin::OpenGL::Component::TextHandle>(core, ES::Plugin::OpenGL::Component::TextHandle("timeElapsedText"));
+}
+
+void UpdateTextTime(ES::Engine::Core &core)
+{
+    // Yes, this should be a resource and not a static variable
+    static float ts = 0.0f;
+    ts += core.GetScheduler<ES::Engine::Scheduler::Update>().GetDeltaTime();
+
+    core.GetRegistry()
+        .view<ES::Plugin::OpenGL::Component::TextHandle, ES::Plugin::UI::Component::Text>()
+        .each([&core](auto entity, auto &textHandle, auto &text) {
+            if (textHandle.name == "timeElapsedText")
+            {
+                text.text = "Time elapsed: " + std::to_string(ts) + "s";
+            }
+        });
 }
 
 int main()
@@ -189,6 +212,8 @@ int main()
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddTorus2);
     core.RegisterSystem<ES::Engine::Scheduler::Startup>(TESTAddText);
+
+    core.RegisterSystem<ES::Engine::Scheduler::Update>(UpdateTextTime);
 
     core.RunCore();
 
